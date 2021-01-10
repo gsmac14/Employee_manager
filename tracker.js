@@ -1,20 +1,18 @@
-require("dotenv").config()
+require("dotenv").config();
 const mysql = require("mysql");
 const inquirer = require("inquirer");
 const consoleTable = require("console.table");
 
-
 var connection = mysql.createConnection({
   host: "localhost",
 
-  user: 'root',
-  password:process.env.MYSQL_PASSWORD,
+  user: "root",
+  password: process.env.MYSQL_PASSWORD,
 
   // Your port; if not 3306
   port: 3306,
 
   // Your username
-
 
   // Your password
 
@@ -219,64 +217,53 @@ function addEmployee() {
 }
 function updateEmpRoles() {
   connection.query(
-    "SELECT employee.last_name, role.title FROM employee JOIN role ON employee.role_id = role.id;",
-    function (err, res) {
+    "SELECT role.title, employee.last_name, employee.role_id, employee.id FROM employee INNER JOIN department ON department.id = employee.id INNER JOIN role ON role.id = employee.id",
+
+    async function (err, res) {
+      const employeesChoices = res.map(({ id, last_name }) => ({
+        name: last_name,
+        value: id,
+      }));
+
+      const { employeeId } = await 
       inquirer
-        .prompt([
-          {
-            type: "rawlist",
-            name: "updateEmp",
-            choices: function () {
-              var lastName = [];
-              for (var i = 0; i < res.length; i++) {
-                lastName.push(res[i].last_name);
-              }
-              return lastName;
-            },
-            message:
-              "Please enter the employees last name that you want to update.",
-          },
+      .prompt([
+        {
+          type: "list",
+          name: "employeeId",
+          message: "Which employee do you want to update?",
+          choices: employeesChoices,
+        },
+      ]);
 
-          {
-            type: "rawlist",
-            message: "What is the employee new role?",
-            name: "updateRole",
-            choices: function () {
-              var roleArr = [];
-              for (var i = 0; i < res.length; i++) {
-                roleArr.push(res[i].title);
-                if (err) throw err;
-              }
-              return roleArr;
-            },
-          },
-        ])
+      const rolesChoices = res.map(({ role_id, title }) => ({
+        name: title,
+        value: role_id,
+      }));
 
-        .then(function (answer) {
-          var updateE;
-          for (var i = 0; i < res.length; i++) {
-            if (res[i].item_name === answer.updateRole) {
-              updateE = res[i];
-            }
-          }
-          connection.query(
-            "UPDATE employee SET ? WHERE ?",
-            
-            [{
-              last_name: answer.updateEmp,
-            },
+      const { roleId } = await 
+      inquirer
+      .prompt([
+        {
+          type: "list",
+          name: "roleId",
+          message: "Which role do you want to assign to the employee?",
+          choices: rolesChoices,
+        },
+      ]);
 
-            {
-              role_id: answer.role_id,
-            }],
+      await connection.query(
+        "UPDATE employee SET role_id = ? WHERE id =?",
 
-            function (err, res) {
-              if (err) throw err;
-              questions();
-              //connection.end();
-            }
-          );
-        });
+        [roleId, employeeId],
+
+        function (err, res) {
+          if (err) throw err;
+          questions();
+          console.log(res);
+          //connection.end();
+        }
+      );
     }
   );
-  }
+}
