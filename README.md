@@ -11,6 +11,9 @@
   * [Contact](#contact)
   
   ## Description
+  ![Alt text](/employee_manager.gif)
+
+  
   This application was built as a solution for managing a company's employees using node, inquirer, and MySQL.
 
   ## Installation
